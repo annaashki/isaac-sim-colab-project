@@ -4,6 +4,8 @@ import glfw  # type: ignore[import-not-found]
 import mujoco  # type: ignore[import-not-found]
 import mujoco.viewer  # type: ignore[import-not-found]
 
+print("Creating 6-axis robot arm model...1")
+
 # MuJoCo XML model definition for 6-axis robot arm
 xml_string = """
 <mujoco model="robot_arm">
@@ -24,6 +26,13 @@ xml_string = """
     <!-- Ground plane -->
     <geom name="floor" type="plane" size="2 2 0.1" rgba="0.9 0.9 0.9 1" material="grid"/>
     <light pos="0 0 3" dir="0 0 -1" diffuse="1 1 1"/>
+    
+    <!-- Cube to pick up -->
+    <body name="cube" pos="0.5 0.5 0.5">
+      <freejoint/>
+      <geom name="cube_geom" type="box" size="0.05 0.05 0.05" rgba="0.9 0.7 0.2 1"/>
+      <inertial pos="0 0 0" mass="0.2" diaginertia="0.000167 0.000167 0.000167"/>
+    </body>
     
     <!-- Robot Base -->
     <body name="base" pos="0 0 0.1">
@@ -47,7 +56,7 @@ xml_string = """
           <inertial pos="0 0.2 0" mass="0.8" diaginertia="0.008 0.008 0.008"/>
           
           <!-- Joint 4: Second elbow joint -->
-          <joint name="elbow2" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="12.0" armature="0.1"/>
+          <joint name="elbow2" type="hinge" axis="1 0 0" range="0 3.14159" damping="12.0" armature="0.1"/>
           
           <!-- Link 3 - another horizontal segment -->
           <body name="link3" pos="0 0.4 0">
@@ -59,15 +68,15 @@ xml_string = """
             
             <!-- Link 4 (gripper mount) - wrist -->
             <body name="link4" pos="0 0.3 0">
-              <geom name="link4_geom" type="capsule" fromto="0 0 0 0 0.15 0" size="0.03" rgba="0.3 0.3 0.8 1"/>
-              <inertial pos="0 0.075 0" mass="0.5" diaginertia="0.005 0.005 0.005"/>
+              <geom name="link4_geom" type="capsule" fromto="0 0 0 0 0.08 0" size="0.025" rgba="0.3 0.3 0.8 1"/>
+              <inertial pos="0 0.04 0" mass="0.3" diaginertia="0.003 0.003 0.003"/>
               
               <!-- Joint 2: Gripper rotation -->
               <joint name="gripper_rotation" type="hinge" axis="0 1 0" range="-3.14159 3.14159" damping="6.0" armature="0.02"/>
               
               <!-- Gripper fingers -->
               <body name="gripper_left" pos="0 0.15 0.05">
-                <geom name="gripper_left_geom" type="box" size="0.015 0.04 0.01" rgba="0.9 0.1 0.1 1"/>
+                <geom name="gripper_left_geom" type="box" size="0.015 0.08 0.01" rgba="0.9 0.1 0.1 1"/>
                 <inertial pos="0 0 0" mass="0.05" diaginertia="0.001 0.001 0.001"/>
                 
                 <!-- Joint 1: Gripper (left finger) -->
@@ -75,7 +84,7 @@ xml_string = """
               </body>
               
               <body name="gripper_right" pos="0 0.15 -0.05">
-                <geom name="gripper_right_geom" type="box" size="0.015 0.04 0.01" rgba="0.9 0.1 0.1 1"/>
+                <geom name="gripper_right_geom" type="box" size="0.015 0.08 0.01" rgba="0.9 0.1 0.1 1"/>
                 <inertial pos="0 0 0" mass="0.05" diaginertia="0.001 0.001 0.001"/>
                 
                 <!-- Gripper (right finger - mirrors left) -->
@@ -91,7 +100,7 @@ xml_string = """
   <actuator>
     <position name="base_rot_actuator" joint="base_rotation" kp="280" kv="55" ctrlrange="-3.14159 3.14159"/>
     <position name="elbow1_actuator" joint="elbow1" kp="280" kv="55" ctrlrange="-1.57 1.57"/>
-    <position name="elbow2_actuator" joint="elbow2" kp="280" kv="55" ctrlrange="-1.57 1.57"/>
+    <position name="elbow2_actuator" joint="elbow2" kp="280" kv="55" ctrlrange="0 3.14159"/>
     <position name="elbow3_actuator" joint="elbow3" kp="230" kv="45" ctrlrange="-3.14159 3.14159"/>
     <position name="gripper_rot_actuator" joint="gripper_rotation" kp="140" kv="30" ctrlrange="-3.14159 3.14159"/>
     <position name="gripper_left_actuator" joint="gripper_left" kp="70" kv="18" ctrlrange="-0.03 0.03"/>
@@ -116,7 +125,7 @@ actuator_ids: dict[str, int] = {name: mujoco.mj_name2id(model, mujoco.mjtObj.mjO
 joint_targets: dict[str, float] = {
   'base_rotation': 0.0,
   'elbow1': -0.75,  # tilt shoulder so upper arm leans back slightly
-  'elbow2': 1.20,   # bend elbow forward to lift the forearm upward
+  'elbow2': 1.57,   # straight position (middle of 0 to π range, can bend ±90°)
   'elbow3': -0.60,  # orient wrist so gripper points roughly downward
   'gripper_rotation': 0.0,
   'gripper': 0.0  # Controls both gripper fingers
@@ -125,8 +134,8 @@ joint_targets: dict[str, float] = {
 joint_ranges: dict[str, tuple[float, float]] = {
   'base_rotation': (-3.14159, 3.14159),
   'elbow1': (-1.57, 1.57),
-  'elbow2': (-1.57, 1.57),
-  'elbow3': (-3.14159, 3.14159),
+  'elbow2': (0, 3.14159),
+  'elbow3': (-1.57, 1.57),
   'gripper_rotation': (-3.14159, 3.14159),
   'gripper': (-0.03, 0.03)
 }
