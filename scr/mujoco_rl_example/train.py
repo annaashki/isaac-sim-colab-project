@@ -46,11 +46,10 @@ def train_rl_agent(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"{algorithm}_{timestamp}"
     
-    # Create training environment
-    print("\nCreating training environment...")
-    env = DummyVecEnv([make_env])
-    
-    # Normalize observations and rewards for better training
+    # Use 8 parallel environments for training and evaluation
+    num_envs = 8
+    print(f"\nCreating training environment with {num_envs} parallel envs...")
+    env = DummyVecEnv([make_env for _ in range(num_envs)])
     env = VecNormalize(
         env,
         norm_obs=True,
@@ -58,10 +57,8 @@ def train_rl_agent(
         clip_obs=10.0,
         clip_reward=10.0
     )
-    
-    # Create evaluation environment
-    print("Creating evaluation environment...")
-    eval_env = DummyVecEnv([make_env])
+    print(f"Creating evaluation environment with {num_envs} parallel envs...")
+    eval_env = DummyVecEnv([make_env for _ in range(num_envs)])
     eval_env = VecNormalize(
         eval_env,
         norm_obs=True,
