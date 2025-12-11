@@ -9,7 +9,7 @@ import numpy as np
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from robot_arm_env import RobotArmPickEnv
+from scr.mujoco_rl_example.robot_arm_env import RobotArmPickEnv
 
 
 def test_trained_model(

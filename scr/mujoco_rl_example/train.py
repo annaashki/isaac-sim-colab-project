@@ -10,7 +10,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.monitor import Monitor
 
-from robot_arm_env import RobotArmPickEnv
+from scr.mujoco_rl_example.robot_arm_env import RobotArmPickEnv
 
 
 def make_env():
