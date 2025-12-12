@@ -12,8 +12,7 @@ class Command:
 
 commands: list[Command] = []
 commands.append(Command(time=1, angles=[+0.00, +0.0, +0.0, +0.0, +0.0, +0.0]))
-# commands.append(Command(time=2, angles=[+2.36, +0.3, +0.0, +0.0, +0.0, +0.0]))
-# commands.append(Command(time=2, angles=[+2.36, -0.24, +1.3, +1.7, +0.8, +0.026]))
+commands.append(Command(time=2, angles=[+2.36, +0.5, +1.14, +1.1, +0.8, +0.026]))
 
 
 
